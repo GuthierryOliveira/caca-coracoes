@@ -1,214 +1,311 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1" />
-  <title>Caça‑Corações ❤️</title>
-  <style>
-    :root { --bg: #0f0f13; --fg: #fff; --accent: #ff4d6d; --accent2: #ff8fab; }
-    * { box-sizing: border-box; }
-    html, body { height:100%; margin:0; background: radial-gradient(1200px 600px at 50% -20%, #1a1a24, var(--bg)); color: var(--fg); font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Color Emoji", "Apple Color Emoji", sans-serif;}
-    .container { position: relative; height: 100%; overflow: hidden; }
-    .header { position:absolute; top:12px; left:12px; right:12px; display:flex; justify-content:space-between; gap:8px; z-index:10; }
-    .badge { background: rgba(255,255,255,0.08); padding:8px 12px; border-radius: 999px; font-weight:600; backdrop-filter: blur(4px); box-shadow: 0 4px 16px rgba(0,0,0,.2);}    
-    .center { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; }
-    .card { background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02)); border:1px solid rgba(255,255,255,0.08); padding:24px; border-radius:24px; box-shadow: 0 10px 40px rgba(0,0,0,.35); text-align:center; max-width: min(520px, 92vw); }
-    h1 { margin:6px 0 12px; font-size: clamp(24px, 5vw, 36px); }
-    p { margin: 8px 0 0; opacity:.9 }
-    button { appearance:none; border:0; border-radius: 999px; padding:14px 22px; font-weight:700; font-size:16px; cursor:pointer; background: linear-gradient(135deg, var(--accent), var(--accent2)); color:#fff; box-shadow: 0 10px 24px rgba(255,77,109,.3); transition: transform .05s ease; }
-    button:active { transform: translateY(2px) scale(.99); }
-
-    #playfield { position:absolute; inset:0; overflow:hidden; touch-action: manipulation; }
-    .heart { position:absolute; width:48px; height:48px; transform: rotate(-45deg); background: var(--accent); box-shadow: 0 6px 18px rgba(255,77,109,.4); cursor:pointer; z-index:5; }
-    .heart::before, .heart::after { content:""; position:absolute; width:48px; height:48px; background: var(--accent); border-radius:50%; }
-    .heart::before{ top:-24px; left:0; }
-    .heart::after{ left:24px; top:0; }
-    .pop { animation: pop .28s ease forwards; }
-    @keyframes pop { 50% { transform: rotate(-45deg) scale(1.2);} 100% { transform: rotate(-45deg) scale(0);} }
-
-    .badge #score, .badge #timer { font-variant-numeric: tabular-nums; }
-    #start, #end { z-index:20; }
-    #end h2 { font-size: clamp(26px, 6vw, 40px); margin: 0 0 8px; }
-    #end .msg { font-size: clamp(18px, 4vw, 24px); opacity:.95 }
-    .small { font-size: 13px; opacity:.8 }
-    .hidden{ display:none !important }
-
-    .confetti { position:absolute; width:16px; height:16px; pointer-events:none; transform: rotate(-45deg); background: var(--accent2); }
-    .confetti::before, .confetti::after{ content:""; position:absolute; width:16px; height:16px; background: var(--accent2); border-radius:50%; }
-    .confetti::before{ top:-8px; left:0; }
-    .confetti::after{ left:8px; top:0; }
-
-    .fade-in{ animation: fade .6s ease both }
-    @keyframes fade{ from{ opacity:0; transform: translateY(8px)} to{ opacity:1; transform:none } }
-  </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>Angry Love — Joelma v4 💘</title>
+<style>
+  html,body{height:100%;margin:0;background:#0e0f14;color:#fff;font-family:Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif;overflow:hidden}
+  #c{position:absolute;inset:0;width:100%;height:100%;display:block;background:linear-gradient(180deg,#12131b 0%,#0e0f14 70%)}
+  .hud{position:absolute;left:12px;right:12px;top:10px;display:flex;justify-content:space-between;z-index:6;pointer-events:none}
+  .badge{background:rgba(255,255,255,.08);padding:8px 12px;border-radius:999px;font-weight:700;backdrop-filter:blur(4px);box-shadow:0 4px 16px rgba(0,0,0,.25)}
+  .center{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;z-index:8}
+  .card{max-width:min(560px,92vw);text-align:center;border-radius:24px;padding:22px;background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.02));border:1px solid rgba(255,255,255,.08);box-shadow:0 10px 40px rgba(0,0,0,.35)}
+  .btn{appearance:none;border:0;border-radius:999px;padding:14px 22px;font-weight:800;cursor:pointer;margin-top:14px;background:linear-gradient(135deg,#ff4d6d,#ff8fab);color:#fff;box-shadow:0 10px 24px rgba(255,77,109,.35)}
+  .hide{display:none!important}
+  .msg{font-size:clamp(16px,4vw,22px);opacity:.95;margin:0}
+  .big{font-size:clamp(26px,6vw,42px);margin:0 0 6px}
+  .hint{position:absolute;left:50%;top:56px;transform:translateX(-50%);opacity:.85;font-size:14px;z-index:5}
+  .tutor{position:absolute;left:0;right:0;bottom:0;top:0;z-index:7;pointer-events:none}
+</style>
 </head>
 <body>
-<div class="container">
-  <div class="header">
-    <div class="badge">❤️ Pontos: <span id="score">0</span></div>
-    <div class="badge">⏱️ Tempo: <span id="timer">22</span>s</div>
-  </div>
-
-  <div id="playfield" aria-label="campo de jogo"></div>
-
-  <div id="start" class="center">
-    <div class="card fade-in">
-      <h1>Caça‑Corações</h1>
-      <p>Toque nos coraçõezinhos que subirem na tela. Junte <b id="goalText">14</b> antes do tempo acabar!</p>
-      <p class="small">Funciona no celular e no PC 👍</p>
-      <br>
-      <button id="btnStart">Começar</button>
-    </div>
-  </div>
-
-  <div id="end" class="center hidden">
-    <div class="card fade-in">
-      <h2 id="endTitle">Missão cumprida! 💘</h2>
-      <p class="msg" id="loveMsg">Eu tenho uma coisa pra te dizer…</p>
-      <p class="msg" id="loveMsg2" style="margin-top: 6px; font-weight: 700;">Joelma, eu te amo ❤️</p>
-      <br>
-      <button id="btnReplay">Jogar de novo</button>
-    </div>
+<canvas id="c" aria-label="Angry Love — Joelma v4"></canvas>
+<div class="hud">
+  <div class="badge">💗 Derrubados: <span id="down">0</span>/<span id="total">0</span></div>
+  <div class="badge">🫶 Chances: <span id="shots">3</span>/3</div>
+</div>
+<div id="start" class="center">
+  <div class="card">
+    <h1 class="big">Angry Love</h1>
+    <p class="msg">Puxe o estilingue e derrube o obstáculo. Você tem <b>3 chances</b>. Ao derrubar tudo, aparece a mensagem de amor!</p>
+    <button id="btnStart" class="btn">Começar</button>
   </div>
 </div>
+<div id="win" class="center hide">
+  <div class="card">
+    <h1 class="big" id="finalTitle">Joelma, eu te amo ❤️</h1>
+    <p class="msg">Perfeito! Quer jogar de novo?</p>
+    <button id="btnAgainWin" class="btn">Jogar de novo</button>
+  </div>
+</div>
+<div id="gameover" class="center hide">
+  <div class="card">
+    <h1 class="big">Acabaram as chances 😅</h1>
+    <p class="msg">Tenta mais uma vez?</p>
+    <button id="btnAgainOver" class="btn">Jogar de novo</button>
+  </div>
+</div>
+<div class="hint" id="hint">Dica: no PC use o mouse; no celular, toque e arraste</div>
+<svg class="tutor" id="tutor" viewBox="0 0 100 100" preserveAspectRatio="none">
+  <circle id="mark" cx="15" cy="82" r="6" fill="none" stroke="rgba(255,255,255,.6)" stroke-width="1.5">
+    <animate attributeName="r" values="4;7;4" dur="1.6s" repeatCount="indefinite" />
+  </circle>
+  <text x="20" y="78" font-size="4" fill="rgba(255,255,255,.75)" font-weight="700">puxe aqui</text>
+  <polyline points="20,80 27,74 34,76" fill="none" stroke="rgba(255,255,255,.6)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+</svg>
 
 <script>
 (() => {
-  // ======== CONFIGURÁVEL ========
-  const DURACAO_SEG = 22;              // tempo de jogo
-  const META_PONTOS = 14;              // pontos para "vencer"
-  const NOME_ALVO   = "Joelma";        // nome usado na mensagem
-  const MENSAGEM    = "Joelma, eu te amo ❤️";
-  const INTERVALO_SPAWN_MS = 520;      // intervalo entre corações
-  // ======== FIM CONFIG ========
+  // CONFIG
+  const NAME = "Joelma";
+  const MESSAGE = `${NAME}, eu te amo ❤️`;
+  const LETTERS = Array.from("J O E L M A   E U   T E   A M O");
+  const BLOCKS_COUNT = 10;
+  const MAX_SHOTS = 5;
+  const POWER = 50; // força do estilingue (ajuste aqui)
+  const FRICTION = 0.86; // atrito no chão
 
-  const q = s => document.querySelector(s);
-  const playfield = q('#playfield');
-  const scoreEl = q('#score');
-  const timerEl = q('#timer');
-  const start = q('#start');
-  const end = q('#end');
-  const goalText = q('#goalText');
-  const endTitle = q('#endTitle');
-  const loveMsg = q('#loveMsg');
-  const loveMsg2 = q('#loveMsg2');
-  const btnStart = q('#btnStart');
-  const btnReplay = q('#btnReplay');
+  const canvas = document.getElementById('c');
+  const ctx = canvas.getContext('2d');
+  const downEl = document.getElementById('down');
+  const totalEl = document.getElementById('total');
+  const shotsEl = document.getElementById('shots');
+  const overlayStart = document.getElementById('start');
+  const overlayWin = document.getElementById('win');
+  const overlayOver = document.getElementById('gameover');
+  const finalTitle = document.getElementById('finalTitle');
+  const btnStart = document.getElementById('btnStart');
+  const btnAgainWin = document.getElementById('btnAgainWin');
+  const btnAgainOver = document.getElementById('btnAgainOver');
+  const hint = document.getElementById('hint');
+  const tutor = document.getElementById('tutor');
 
-  goalText.textContent = META_PONTOS;
-  loveMsg.textContent = NOME_ALVO ? `Eu tenho uma coisa pra te dizer…` : "Eu tenho uma coisa pra te dizer…";
-  loveMsg2.textContent = MENSAGEM;
+  let DPR = Math.max(1, Math.min(2, window.devicePixelRatio||1));
+  function resize(){ canvas.width = Math.floor(innerWidth*DPR); canvas.height = Math.floor(innerHeight*DPR); }
+  resize(); addEventListener('resize', resize);
 
-  let running = false, score = 0, secs = DURACAO_SEG, spawnInt, timerInt;
+  const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+  const rand=(a,b)=>Math.random()*(b-a)+a;
+  const S=v=> v*(canvas.height/700);
 
-  function rand(min, max){ return Math.random()*(max-min)+min; }
-  function randint(min, max){ return Math.floor(rand(min, max)); }
+  const sling = { x:S(140), y:canvas.height - S(120), pulling:false, px:0, py:0 };
+  const proj = { x:sling.x, y:sling.y, r:S(16), vx:0, vy:0, launched:false, sleeping:false, sleepMs:0 };
+  let shotsLeft = MAX_SHOTS;
+  shotsEl.textContent = shotsLeft;
 
-  function spawnHeart(){
-    if(!running) return;
-    const h = document.createElement('div');
-    h.className = 'heart';
-    // tamanho aleatório (maior para visibilidade)
-    const size = rand(40, 64);
-    h.style.width = size + 'px';
-    h.style.height = size + 'px';
-    h.style.setProperty('--size', size + 'px');
+  // Physics constants (units in px/s and seconds)
+  let gravity = S(1400); // menor que v3 para arcos mais bonitos
+  let restitution = 0.32;
+  let groundY = canvas.height - S(80);
 
-    // posição inicial embaixo da tela
-    const leftPct = rand(8, 92);
-    h.style.left = leftPct + '%';
-    h.style.top = '100vh'; // garante que começa visível (fora da área) e sobe
-
-    // interações
-    function punctuate(){
-      score++;
-      scoreEl.textContent = score;
-      h.classList.add('pop');
-      if (navigator.vibrate) navigator.vibrate(10);
-      setTimeout(()=> h.remove(), 220);
+  // Blocks
+  const blocks=[]; let destroyedCount=0;
+  function resetBlocks(){
+    blocks.length=0; lettersShown=0; destroyedCount=0; downEl.textContent=0;
+    const baseX = canvas.width - S(260), baseY = groundY, bw=S(56), bh=S(28);
+    let levels = Math.ceil(BLOCKS_COUNT/2), idx=0;
+    for(let row=0; row<levels; row++){
+      const y = baseY - row*bh; const cols = (row===0)?3:2;
+      for(let c=0;c<cols && idx<BLOCKS_COUNT;c++){
+        const x = baseX + (c - (cols-1)/2) * (bw + S(4));
+        blocks.push({x, y:y-bh/2, w:bw, h:bh, vx:0, vy:0, static:true, hp:15, destroyed:false, fallAngle:0});
+        idx++;
+      }
     }
-    h.addEventListener('pointerdown', punctuate, {passive:true});
-    h.addEventListener('click', punctuate, {passive:true});
-
-    playfield.appendChild(h);
-
-    // animação subida (Web Animations API -> mais compatível/óbvio)
-    const driftVW = rand(-10, 10); // pequena deriva horizontal
-    const duration = rand(4500, 7000);
-
-    const anim = h.animate([
-      { transform: 'translate(0, 10vh) rotate(-45deg)', opacity: 0 },
-      { transform: 'translate(0, 0) rotate(-45deg)', opacity: 1, offset: 0.08 },
-      { transform: `translate(${driftVW}vw, -120vh) rotate(-45deg)`, opacity: 0 }
-    ], { duration, easing: 'linear' });
-
-    anim.onfinish = () => h.remove();
+    totalEl.textContent = blocks.length;
   }
 
-  function startGame(){
-    score = 0; secs = DURACAO_SEG;
-    scoreEl.textContent = '0';
-    timerEl.textContent = String(secs);
-    start.classList.add('hidden');
-    end.classList.add('hidden');
-    playfield.innerHTML = '';
-    running = true;
-
-    // Spawns imediatos para já ver corações
-    for(let i=0;i<3;i++) setTimeout(spawnHeart, i*120);
-    spawnInt = setInterval(spawnHeart, INTERVALO_SPAWN_MS);
-
-    timerInt = setInterval(()=>{
-      secs--;
-      timerEl.textContent = String(secs);
-      if(secs <= 0) finishGame();
-    }, 1000);
+  // Letter particles that rise from under destroyed blocks
+  const letterParts = []; // {char, x,y, t, dur, y0, rot, alpha}
+  let lettersShown = 0;
+  function spawnLetterAt(x, y){
+    if(lettersShown >= LETTERS.length) return;
+    let ch = LETTERS[lettersShown++];
+    if(ch === " "){ ch = "♥"; }
+    letterParts.push({ char: ch, x, y, y0: y + S(8), t:0, dur:900 + Math.random()*300, rot:(Math.random()-.5)*0.5, alpha:0 });
   }
-
-  function finishGame(){
-    running = false;
-    clearInterval(spawnInt);
-    clearInterval(timerInt);
-    endTitle.textContent = (score >= META_PONTOS) ? 'Missão cumprida! 💘' : 'Ainda assim, preciso te dizer…';
-    end.classList.remove('hidden');
-    burstHearts((score >= META_PONTOS) ? 40 : 18);
+  function drawLetterPart(lp){
+    ctx.save();
+    ctx.globalAlpha = lp.alpha;
+    ctx.translate(lp.x, lp.y);
+    ctx.rotate(lp.rot * (lp.t/lp.dur));
+    ctx.font = `bold ${S(34)}px Inter, system-ui, sans-serif`;
+    ctx.fillStyle = '#ff8fab';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(lp.char, 0, 0);
+    ctx.restore();
   }
-
-  function burstHearts(qtd){
-    for(let i=0;i<qtd;i++){
-      const c = document.createElement('div');
-      c.className = 'confetti';
-      c.style.left = rand(10, 90) + '%';
-      c.style.top  = rand(35, 55) + '%';
-      playfield.appendChild(c);
-      const dx = rand(-60,60), dy = rand(-20, -120);
-      const t = rand(600, 1400);
-      const a = c.animate([
-        { transform: 'translate(0,0) rotate(-45deg)', opacity: 1 },
-        { transform: `translate(${dx}px, ${dy}px) rotate(-45deg)`, opacity: 0 }
-      ], { duration: t, easing: 'cubic-bezier(.17,.67,.32,1.17)' });
-      a.onfinish = ()=> c.remove();
+  function updateLetters(dt){
+    for(let i=letterParts.length-1; i>=0; i--){
+      const lp = letterParts[i];
+      lp.t += dt;
+      const k = Math.min(1, lp.t / lp.dur);
+      const ease = 1 - Math.pow(1-k, 2);
+      lp.y = lp.y0 - ease * S(46);
+      lp.alpha = Math.min(1, k*1.5);
+      if(lp.t >= lp.dur) letterParts.splice(i,1);
     }
   }
 
-  btnStart.addEventListener('click', startGame);
-  btnReplay.addEventListener('click', startGame);
-
-  // Personalização via URL (?msg=...&meta=...)
-  const params = new URLSearchParams(location.search);
-  if(params.get('msg')){
-    const m = decodeURIComponent(params.get('msg'));
-    loveMsg2.textContent = m;
-  }
-  if(params.get('meta')){
-    const m = Math.max(1, Number(params.get('meta'))||META_PONTOS);
-    goalText.textContent = m;
+  function circleRectColl(cx,cy,cr,rx,ry,rw,rh){
+    const nx=clamp(cx,rx,rx+rw), ny=clamp(cy,ry,ry+rh); const dx=cx-nx, dy=cy-ny; return dx*dx+dy*dy<=cr*cr;
   }
 
-  // Teclado no desktop
-  document.addEventListener('keydown', (e)=>{
-    if(!running && (e.key===' ' || e.key==='Enter')) startGame();
-  });
+  function blockHit(b, power, dirx, diry){
+    if(b.destroyed) return; b.static=false; b.hp -= power; b.vx += dirx*power*0.06; b.vy += diry*power*0.06 - S(60)/1000;
+    if(b.hp<=0){
+      b.destroyed=true; destroyedCount++; downEl.textContent=destroyedCount;
+      spawnLetterAt(b.x, b.y + b.h/2 + S(6)); // letter reveals from under
+      if(navigator.vibrate) navigator.vibrate(12);
+      if(destroyedCount >= blocks.length){
+        setTimeout(()=>{ finalTitle.textContent = MESSAGE; overlayWin.classList.remove('hide'); }, 650);
+      }
+    }
+  }
+
+  function resetGame(){
+    overlayWin.classList.add('hide'); overlayOver.classList.add('hide'); overlayStart.classList.remove('hide');
+    tutor.style.display='block'; hint.style.opacity=1;
+    proj.x=sling.x; proj.y=sling.y; proj.vx=0; proj.vy=0; proj.launched=false; proj.sleeping=false; proj.sleepMs=0; sling.pulling=false; letterParts.length=0; lettersShown=0;
+    shotsLeft = MAX_SHOTS; shotsEl.textContent = shotsLeft;
+    resetBlocks();
+  }
+
+  // Input helpers
+  function toCanvasXY(e){ const r=canvas.getBoundingClientRect(); const x=((e.touches?e.touches[0].clientX:e.clientX)-r.left)*DPR; const y=((e.touches?e.touches[0].clientY:e.clientY)-r.top)*DPR; return {x,y}; }
+
+  function onDown(e){
+    const p=toCanvasXY(e); const dx=p.x-sling.x, dy=p.y-sling.y; const dist=Math.hypot(dx,dy);
+    if(overlayStart && !overlayStart.classList.contains('hide')){ overlayStart.classList.add('hide'); tutor.style.display='none'; }
+    if((!proj.launched || proj.sleeping) && shotsLeft>0){
+      if(dist<S(120)){
+        sling.pulling=true; sling.px=p.x; sling.py=p.y; proj.x=sling.px; proj.y=sling.py; proj.launched=false; proj.sleeping=false; proj.sleepMs=0;
+      }
+    }
+  }
+  function onMove(e){ if(!sling.pulling) return; const p=toCanvasXY(e); const dx=p.x-sling.x, dy=p.y-sling.y; const maxPull=S(140); const d=Math.min(maxPull,Math.hypot(dx,dy)); const ang=Math.atan2(dy,dx); sling.px=sling.x+Math.cos(ang)*d; sling.py=sling.y+Math.sin(ang)*d; proj.x=sling.px; proj.y=sling.py; }
+  function onUp(){ if(!sling.pulling) return; sling.pulling=false; if(shotsLeft<=0) return;
+    // velocity per second; invert vertical so puxar pra cima joga pra cima
+    const dx = (sling.x - sling.px) * POWER;
+    const dy = (sling.y - sling.py) * POWER;
+    setVelocity(dx, -dy); // y invertido
+    shotsLeft--; shotsEl.textContent = shotsLeft;
+  }
+
+  function setVelocity(vx,vy){ // vx,vy em px/s
+    proj.vx=vx; proj.vy=vy; proj.launched=true; proj.sleeping=false; proj.sleepMs=0; hint.style.opacity=0; if(navigator.vibrate) navigator.vibrate(8);
+  }
+
+  canvas.addEventListener('pointerdown', onDown);
+  canvas.addEventListener('pointermove', onMove);
+  canvas.addEventListener('pointerup', onUp);
+  canvas.addEventListener('pointerleave', onUp);
+  canvas.addEventListener('touchstart', onDown, {passive:true});
+  canvas.addEventListener('touchmove', onMove, {passive:true});
+  canvas.addEventListener('touchend', onUp);
+
+  btnStart.addEventListener('click', ()=>{ overlayStart.classList.add('hide'); tutor.style.display='none'; });
+  btnAgainWin.addEventListener('click', resetGame);
+  btnAgainOver.addEventListener('click', resetGame);
+
+  function drawHeart(x,y,r,fill='#ff4d6d',stroke='rgba(0,0,0,.28)'){
+    const s=r; ctx.save(); ctx.translate(x,y); ctx.beginPath(); ctx.moveTo(0,s*0.3); ctx.bezierCurveTo(0,-s*0.4,-s*0.8,-s*0.1,-s*0.8,s*0.3); ctx.bezierCurveTo(-s*0.8,s*0.9,0,s*1.2,0,s*1.6); ctx.bezierCurveTo(0,s*1.2,s*0.8,s*0.9,s*0.8,s*0.3); ctx.bezierCurveTo(s*0.8,-s*0.1,0,-s*0.4,0,s*0.3); ctx.closePath(); ctx.fillStyle=fill; ctx.fill(); ctx.lineWidth=Math.max(1.5,s*0.12); ctx.strokeStyle=stroke; ctx.stroke(); ctx.restore();
+  }
+  function rrect(x,y,w,h,r,fill){ const rr=Math.min(r,w/2,h/2); ctx.beginPath(); ctx.moveTo(x-w/2+rr,y-h/2); ctx.arcTo(x+w/2,y-h/2,x+w/2,y+h/2,rr); ctx.arcTo(x+w/2,y+h/2,x-w/2,y+h/2,rr); ctx.arcTo(x-w/2,y+h/2,x-w/2,y-h/2,rr); ctx.arcTo(x-w/2,y-h/2,x+w/2,y-h/2,rr); ctx.closePath(); ctx.fillStyle=fill; ctx.fill(); }
+
+  let last = performance.now();
+  function loop(now){
+    const dtMs = Math.min(32, now-last); last=now;
+    const dt = dtMs/1000; // seconds
+
+    // projectile physics (px/s)
+    if(proj.launched && !proj.sleeping){
+      proj.vy += gravity*dt;        // gravity pulls down
+      proj.x  += proj.vx*dt;
+      proj.y  += proj.vy*dt;
+
+      // ground
+      if(proj.y + proj.r > groundY){
+        proj.y = groundY - proj.r;
+        proj.vy = -proj.vy*restitution;
+        proj.vx *= FRICTION;
+        if(Math.abs(proj.vy) < 12){ proj.sleeping=true; proj.sleepMs=0; }
+      }
+      // bounds
+      if(proj.x > canvas.width + S(200) || proj.y > canvas.height + S(200) || proj.x < -S(200)){
+        rearmOrEnd();
+      }
+    }
+    // auto rearm after rest
+    if(proj.sleeping){ proj.sleepMs += dtMs; if(proj.sleepMs > 900){ rearmOrEnd(); } }
+
+    // blocks & collisions
+    for(const b of blocks){
+      if(b.destroyed){ b.fallAngle += 0.06*dtMs/16; b.vy += gravity*dt; b.y += b.vy*dt*0.4; b.x += b.vx*dt*0.4; continue; }
+      if(!b.static){ b.vy += gravity*dt; b.y += b.vy*dt*0.4; b.x += b.vx*dt*0.4; if(b.y + b.h/2 > groundY){ b.y = groundY - b.h/2; b.vy = -b.vy*0.15; b.vx*=0.8; if(Math.abs(b.vy)>70) b.hp -= Math.abs(b.vy)*0.12; if(b.hp<=0 && !b.destroyed){ b.destroyed=true; destroyedCount++; downEl.textContent=destroyedCount; spawnLetterAt(b.x, b.y + b.h/2 + S(6)); if(destroyedCount >= blocks.length){ setTimeout(()=>{ finalTitle.textContent = MESSAGE; overlayWin.classList.remove('hide'); }, 650); } } } }
+      if(proj.launched && circleRectColl(proj.x,proj.y,proj.r, b.x-b.w/2, b.y-b.h/2, b.w,b.h)){
+        const nx=clamp(proj.x, b.x-b.w/2, b.x+b.w/2), ny=clamp(proj.y, b.y-b.h/2, b.y+b.h/2);
+        const dx=proj.x-nx, dy=proj.y-ny; const dist=Math.hypot(dx,dy)||1; const nxn=dx/dist, nyn=dy/dist;
+        const speed=Math.hypot(proj.vx,proj.vy); const power=clamp(speed*0.08, 2, 26); // dano proporcional
+        proj.vx = (proj.vx - 2*nxn*(proj.vx*nxn + proj.vy*nyn)) * 0.7;
+        proj.vy = (proj.vy - 2*nyn*(proj.vx*nxn + proj.vy*nyn)) * 0.7;
+        blockHit(b, power, nxn, nyn);
+        proj.x += nxn * 2; proj.y += nyn * 2;
+      }
+    }
+
+    // letters
+    updateLetters(dtMs);
+
+    // draw
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    // background hills
+    ctx.fillStyle='#0b1015'; ctx.beginPath(); ctx.ellipse(canvas.width*0.25, groundY+S(120), S(300), S(120), 0, 0, Math.PI*2); ctx.fill(); ctx.beginPath(); ctx.ellipse(canvas.width*0.6, groundY+S(120), S(420), S(140), 0, 0, Math.PI*2); ctx.fill();
+    // ground
+    ctx.fillStyle='#2a9d6b'; ctx.fillRect(0, groundY, canvas.width, canvas.height-groundY); ctx.fillStyle='rgba(255,255,255,.08)'; ctx.fillRect(0, groundY, canvas.width, S(6));
+
+    // slingshot towers
+    ctx.lineWidth=S(10); ctx.strokeStyle='#8b5a2b'; ctx.beginPath(); ctx.moveTo(sling.x - S(18), groundY); ctx.lineTo(sling.x - S(18), sling.y - S(10)); ctx.stroke(); ctx.beginPath(); ctx.moveTo(sling.x + S(18), groundY); ctx.lineTo(sling.x + S(18), sling.y - S(10)); ctx.stroke();
+    if(sling.pulling){ ctx.lineWidth=S(4); ctx.strokeStyle='#f5c2c7'; ctx.beginPath(); ctx.moveTo(sling.x - S(18), sling.y - S(10)); ctx.lineTo(proj.x, proj.y); ctx.stroke(); ctx.beginPath(); ctx.moveTo(sling.x + S(18), sling.y - S(10)); ctx.lineTo(proj.x, proj.y); ctx.stroke(); }
+
+    // blocks
+    for(const b of blocks){
+      if(b.destroyed){
+        ctx.save(); ctx.translate(b.x,b.y); ctx.rotate(b.fallAngle*0.04); rrect(0,0,b.w,b.h,S(6),'#3d405b'); ctx.restore();
+      } else {
+        rrect(b.x,b.y,b.w,b.h,S(6),'#3d405b');
+        ctx.fillStyle='#ff8fab'; const hpw=Math.max(0, Math.min(1, b.hp/22))*(b.w-S(10)); ctx.fillRect(b.x - b.w/2 + S(5), b.y - b.h/2 + S(4), hpw, S(4));
+      }
+    }
+
+    // letters on top
+    for(const lp of letterParts){ drawLetterPart(lp); }
+
+    // projectile
+    drawHeart(proj.x, proj.y - proj.r*0.9, proj.r, '#ff4d6d');
+
+    requestAnimationFrame(loop);
+  }
+  requestAnimationFrame(loop);
+
+  function rearmOrEnd(){
+    // if won already, ignore
+    if(destroyedCount >= blocks.length) return;
+    // rearm if ainda tem chances, senão game over
+    if(shotsLeft > 0){
+      proj.x=sling.x; proj.y=sling.y; proj.vx=0; proj.vy=0; proj.launched=false; proj.sleeping=false; proj.sleepMs=0;
+    } else {
+      overlayOver.classList.remove('hide');
+    }
+  }
+
+  function init(){ finalTitle.textContent = MESSAGE; resetBlocks(); overlayStart.classList.remove('hide'); }
+  init();
+
+  // URL customization
+  try{ const p=new URLSearchParams(location.search); if(p.get('nome')){ const n=decodeURIComponent(p.get('nome')); finalTitle.textContent=`${n}, eu te amo ❤️`; } if(p.get('msg')){ finalTitle.textContent=decodeURIComponent(p.get('msg')); } }catch{}
 })();
 </script>
 </body>
